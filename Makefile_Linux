@@ -1,0 +1,15 @@
+ZLIBPATH = ./3rd/zlib
+MD5PATH = ./3rd/md5
+
+ZLIBOBJS = $(ZLIBPATH)/crc32.o $(ZLIBPATH)/adler32.o $(ZLIBPATH)/inffast.o $(ZLIBPATH)/zip.o $(ZLIBPATH)/deflate.o\
+$(ZLIBPATH)/inflate.o $(ZLIBPATH)/inftrees.o $(ZLIBPATH)/ioapi.o $(ZLIBPATH)/unzip.o $(ZLIBPATH)/zutil.o $(ZLIBPATH)/trees.o
+OBJS = example.o pkcs7.o $(MD5PATH)/md5.o $(ZLIBOBJS)
+
+ALL:$(OBJS)
+	g++ -o example $(OBJS)
+	
+clean:
+	rm *.o
+	rm $(ZLIBPATH)/*.o
+	rm $(MD5PATH)/*.o
+	

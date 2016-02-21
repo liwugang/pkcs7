@@ -26,16 +26,17 @@
 *				subjectUniqueID[optional] : BITSTRING 
 *				extensions[optional] : SEQUENCE  			#保存有证书扩展信息
 *			signatureAlgorithm : AlgorithmIdentifier 		#签名算法 ，如常用的有 SHA256withRSA
-*			signatureValue : BITSTRING 			#这是tbsCertificate部分的数字签名信息，防止tbsCertificate内容被修改
+*			signatureValue : BITSTRING 						#这是tbsCertificate部分的数字签名信息，防止tbsCertificate内容被修改
 *		crls[optional] : SET 								#证书吊销列表
-*		signerInfos : SEQUENCE 								#签名者信息
-*			version : INTEGER
-*			issuerAndSerialNumber : SEQUENCE 				#证书的颁布者和序列号
-*			digestAlgorithmId : SEQUENCE : DigestAlgorithmIdentifier #消息摘要的算法
-*			authenticatedAttributes[optional] 
-*			digestEncryptionAlgorithmId : SEQUENCE 			 #签名算法
-*			encryptedDigest : OCTETSTRING   				#私钥加密后的数据
-*			unauthenticatedAttributes[optional] 
+*		signerInfos : SET
+			signerInfo : SEQUENCE							#签名者信息
+*				version : INTEGER
+*				issuerAndSerialNumber : SEQUENCE 			#证书的颁布者和序列号
+*				digestAlgorithmId : SEQUENCE : DigestAlgorithmIdentifier #消息摘要的算法
+*				authenticatedAttributes[optional] 
+*				digestEncryptionAlgorithmId : SEQUENCE 			#签名算法
+*				encryptedDigest : OCTETSTRING   			#私钥加密后的数据
+*				unauthenticatedAttributes[optional] 
 *
 *每项的保存形式为{tag，length，content}
 */
@@ -547,7 +548,8 @@ bool pkcs7::parse_content(int level)
 					"contentInfo",
 					"certificates-[optional]",
 					"crls-[optional]",
-					"signerInfos"};
+					"signerInfos",
+					"signerInfo"};
 
 	unsigned char tag;
 	int len = 0;	
@@ -597,17 +599,21 @@ bool pkcs7::parse_content(int level)
 		m_pos += len;
 	}
 	//signerInfos
-	tag = m_content[m_pos++];
+	tag = m_content[m_pos];
 	if (tag != TAG_SET) {
 		return false;
 	} 
-	m_pos += len_num(m_content[m_pos]);
-	len = create_element(TAG_SEQUENCE, names[5], level);
+	len = create_element(TAG_SET, names[5], level);
+	if (len == -1 || m_pos + len > m_length) {
+		return false;
+	}
+	//signerInfo
+	len = create_element(TAG_SEQUENCE, names[6], level + 1);
 	if (len == -1 || m_pos + len > m_length) {
 			return false;
 		}
 	p_signer = tail;
-	return parse_signerInfo(level + 1);
+	return parse_signerInfo(level + 2);
 }
 
 /**
@@ -653,15 +659,15 @@ bool pkcs7::parse_pkcs7()
 */
 void pkcs7::print()
 {
-	printf("-------------------------------------------------------------------\n");
-	printf(" name                                      offset        length\n");
-	printf(" ==================================== =============== =============\n");
+	printf("-----------------------------------------------------------------------\n");
+	printf(" name                                          offset        length\n");
+	printf(" ======================================== =============== =============\n");
 	element *p = head;
 	while (p != NULL) {
 		for (int i = 0; i < p->level; i++)
 			printf("    ");
 		printf(" %s", p->name);
-		for (int i = 0; i < 36 - strlen(p->name) - 4*p->level; i++)
+		for (int i = 0; i < 40 - strlen(p->name) - 4*p->level; i++)
 			printf(" ");
 		printf("%6d(0x%02x)", p->begin, p->begin);
 		int num = 0;
@@ -676,7 +682,7 @@ void pkcs7::print()
 		printf("%4d(0x%02x)\n", p->len, p->len);
 		p = p->next;
 	}
-	printf("-------------------------------------------------------------------\n");
+	printf("-----------------------------------------------------------------------\n");
 }
 
 

@@ -12,8 +12,8 @@ int main(int argc, char **argv)
 	pkcs7 test;
 	if (test.open_file(name)) {
 		test.print();
-		test.change_contentType(1);
-		test.add_data((unsigned char *)"hello world", strlen("hello world"), 0);
+		//test.change_contentType(1);
+		//test.add_data((unsigned char *)"hello world", strlen("hello world"), 0);
 		printf("MD5: %s\n", test.get_MD5());
 	}
 	
